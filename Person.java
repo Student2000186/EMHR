@@ -1,4 +1,3 @@
-//Rohan Edmond Person.Java 03/08/2026 Group Project
 package person;
 
 public class Person {
@@ -30,4 +29,5 @@ public class Person {
         System.out.println("ID: " + id);
     }
 }
+   
 
