@@ -1,33 +1,106 @@
 package role;
 
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Role {
 
-    // Stores the name of the role
     private String roleName;
+    private Set<String> permissions;
 
-    // Stores the permissions attached to this role
-    private ArrayList<String> permissions;
-
-    // Constructor creates role and empty permission list
     public Role(String roleName) {
         this.roleName = roleName;
-        permissions = new ArrayList<>();
+        this.permissions = new HashSet<>();
+        assignDefaultPermissions();
     }
 
-    // Adds a permission to the role
-    public void addPermission(String permission) {
-        permissions.add(permission);
+    public Role(String roleName, Set<String> permissions) {
+        this.roleName = roleName;
+        this.permissions = permissions;
     }
 
-    // Checks whether a role has a specific permission
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public Set<String> getPermissions() {
+        return permissions;
+    }
+
     public boolean hasPermission(String permission) {
         return permissions.contains(permission);
     }
 
-    // Returns role name
-    public String getRoleName() {
-        return roleName;
+    public void addPermission(String permission) {
+        permissions.add(permission);
     }
-}
+
+    private void assignDefaultPermissions() {
+        switch (roleName.toUpperCase()) {
+            case "ADMIN":
+                permissions.add("createUser");
+                permissions.add("updateUser");
+                permissions.add("deleteUser");
+                permissions.add("viewUser");
+                permissions.add("viewAllUsers");
+                permissions.add("viewOwnProfile");
+                permissions.add("updateSystemConfig");
+
+                permissions.add("addPatient");
+                permissions.add("viewPatients");
+                permissions.add("updatePatient");
+                permissions.add("deletePatient");
+
+                permissions.add("scheduleAppointment");
+                permissions.add("viewAppointments");
+                permissions.add("updateAppointmentStatus");
+
+                permissions.add("processPayment");
+                permissions.add("approveTransaction");
+
+                permissions.add("recordEHR");
+                permissions.add("viewEHR");
+                permissions.add("searchEHR");
+                permissions.add("runTriage");
+
+                permissions.add("viewReports");
+                break;
+
+            case "MANAGER":
+                permissions.add("viewUser");
+                permissions.add("viewAllUsers");
+                permissions.add("viewOwnProfile");
+
+                permissions.add("viewPatients");
+
+                permissions.add("scheduleAppointment");
+                permissions.add("viewAppointments");
+                permissions.add("updateAppointmentStatus");
+
+                permissions.add("processPayment");
+                permissions.add("approveTransaction");
+
+                permissions.add("recordEHR");
+                permissions.add("viewEHR");
+                permissions.add("searchEHR");
+                permissions.add("runTriage");
+
+                permissions.add("viewReports");
+                break;
+
+            case "USER":
+                permissions.add("viewOwnProfile");
+                permissions.add("viewOwnData");
+                permissions.add("scheduleAppointment");
+                permissions.add("viewAppointments");
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Role: " + roleName + ", Permissions: " + permissions;
+    }
