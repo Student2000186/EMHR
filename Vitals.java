@@ -1,51 +1,56 @@
 package vitals;
 
 public class Vitals {
-	
-	 private double temperature;
-	    private int heartRate;
-	    private String bloodPressure;
-	    private int oxygenLevel;
-	    
-	    public Vitals(double temperature, int heartRate, int oxygenLevel) {
-	        this.temperature = temperature;
-	        this.heartRate = heartRate;
-	        this.oxygenLevel = oxygenLevel;
-	    }
 
-		public double getTemperature() {
-			return temperature;
-		}
+    private double temperature;
+    private int heartRate;
+    private String bloodPressure;
+    private int oxygenLevel;
 
-		public void setTemperature(double temperature) {
-			this.temperature = temperature;
-		}
+    public Vitals(double temperature, int heartRate, String bloodPressure, int oxygenLevel) {
+        this.temperature = temperature;
+        this.heartRate = heartRate;
+        this.bloodPressure = bloodPressure;
+        this.oxygenLevel = oxygenLevel;
+    }
 
-		public int getHeartRate() {
-			return heartRate;
-		}
+    public double getTemperature() {
+        return temperature;
+    }
 
-		public void setHeartRate(int heartRate) {
-			this.heartRate = heartRate;
-		}
+    public void setTemperature(double temperature) {
+        this.temperature = temperature;
+    }
 
-		public String getBloodPressure() {
-			return bloodPressure;
-		}
+    public int getHeartRate() {
+        return heartRate;
+    }
 
-		public void setBloodPressure(String bloodPressure) {
-			this.bloodPressure = bloodPressure;
-		}
+    public void setHeartRate(int heartRate) {
+        this.heartRate = heartRate;
+    }
 
-		public int getOxygenLevel() {
-			return oxygenLevel;
-		}
+    public String getBloodPressure() {
+        return bloodPressure;
+    }
 
-		public void setOxygenLevel(int oxygenLevel) {
-			this.oxygenLevel = oxygenLevel;
-		}
+    public void setBloodPressure(String bloodPressure) {
+        this.bloodPressure = bloodPressure;
+    }
 
+    public int getOxygenLevel() {
+        return oxygenLevel;
+    }
 
+    public void setOxygenLevel(int oxygenLevel) {
+        this.oxygenLevel = oxygenLevel;
+    }
 
-	    
+    @Override
+    public String toString() {
+        return "Temp: " + temperature +
+               ", HR: " + heartRate +
+               ", BP: " + bloodPressure +
+               ", O2: " + oxygenLevel;
+    }
 }
