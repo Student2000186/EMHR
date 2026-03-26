@@ -4,6 +4,7 @@ package main;
 
 import java.util.ArrayList;
 // Scanner allows the program to read input from the user
+import java.util.List;
 import java.util.Scanner;
 
 // Importing classes from other packages used in the system
@@ -32,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Main {
+	
 
     // Console color codes used to improve the visual appearance of the system
     public static final String RESET = "\u001B[0m";
@@ -52,12 +54,30 @@ public class Main {
 
         // Manager classes control specific parts of the system
         UserManager userManager = new UserManager();
-        AppointmentManager appointmentManager = new AppointmentManager();
+        AppointmentManager appointmentManager = new AppointmentManager(FileManager.loadAppointments());
         // Notification classes sends alerts to user and patients
         NotificationService notificationService = new NotificationService();
         notificationService.addObserver(new EmailObserver());
         notificationService.addObserver(new SmsObserver());
+        User currentUser = null;
         
+        while (currentUser == null) {
+            System.out.println(CYAN + "\n===== EMHR LOGIN =====" + RESET);
+            System.out.print("Enter Username: ");
+            String loginUsername = input.next();
+            System.out.print("Enter Password: ");
+            String loginPassword = input.next();
+
+            currentUser = userManager.authenticate(loginUsername, loginPassword);
+
+            if (currentUser == null) {
+            	
+                System.out.println(RED + "Invalid login. Try again." + RESET);
+            } else {
+                System.out.println(GREEN + "Welcome, " + currentUser.getFullName() + "!" + RESET);
+                FileManager.logAudit("User logged in: " + currentUser.getUsername());
+            }
+        }
         
         // Defines the format used for appointment date and time
         DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -71,11 +91,20 @@ public class Main {
             // Clear the screen to keep the interface tidy
             clearScreen();
 
+            
+            
             // Show the menu
             displayMenu();
 
-            System.out.print("Enter Choice: ");
-            choice = input.nextInt();
+            try {
+                System.out.print("Enter Choice: ");
+                choice = input.nextInt();
+                input.nextLine(); // clear leftover newline
+            } catch (Exception e) {
+                System.out.println("Invalid menu input.");
+                input.nextLine();
+                choice = 0;
+            }
 
             switch (choice) {
 
@@ -83,52 +112,61 @@ public class Main {
                 // PATIENT MANAGEMENT
                 // =========================================================
 
-                case 1: // ADD PATIENT
+            case 1: {
+                if (!requirePermission(currentUser, "addPatient")) {
+                    pause(input);
+                    break;
+                }
 
-                    try {
+                try {
+                    System.out.print("Enter Patient Name: ");
+                    String name = input.nextLine();
 
-                        System.out.print("Enter Patient Name: ");
-                        String name = input.next();
+                    System.out.print("Enter Patient ID: ");
+                    String id = input.nextLine();
 
-                        System.out.print("Enter Patient ID: ");
-                        String id = input.next();
+                    System.out.print("Enter Contact Number: ");
+                    String contact = input.nextLine();
 
-                        System.out.print("Enter Contact Number: ");
-                        String contact = input.next();
+                    System.out.print("Enter Next of Kin: ");
+                    String kin = input.nextLine();
 
-                        System.out.print("Enter Next of Kin: ");
-                        String kin = input.next();
+                    Patient patient = new Patient(name, id, contact, kin);
+                    FileManager.savePatient(patient);
+                    FileManager.logAudit("Added patient: " + id + " by " + currentUser.getUsername());
 
-                        // Create patient object
-                        Patient patient = new Patient(name, id, contact, kin);
+                    System.out.println(GREEN + "Patient added successfully." + RESET);
+                } catch (Exception e) {
+                    System.out.println(RED + "Error adding patient." + RESET);
+                }
 
-                        // Save patient details to file
-                        FileManager.savePatient(name + " " + id + " " + contact + " " + kin);
-
-                        System.out.println(GREEN + "Patient Added Successfully." + RESET);
-
-                    } catch (Exception e) {
-
-                        System.out.println(RED + "Invalid patient input." + RESET);
+                pause(input);
+                break;
+            }
+            
+                case 2: {// VIEW PATIENTS
+                	if (!requirePermission(currentUser, "viewPatients")) {
+                        pause(input);
+                        break;
                     }
 
-                    pause();
-                    break;
-
-                case 2: // VIEW PATIENTS
-
-                    System.out.println(BLUE + "\n--- Patient Records ---" + RESET);
+                    
+                    
+                	System.out.println(BLUE + "\n--- Patient Records ---" + RESET);
 
                     // Display all stored patients
                     FileManager.readPatients();
 
-                    pause();
+                    input.nextLine();
+                    pause(input);
                     break;
-
-                case 3: // UPDATE PATIENT
-
+            }
+                case 3: {
+                	if (!requirePermission(currentUser, "updatePatient")) {
+                	    pause(input);
+                	    break;
+                	}
                     try {
-
                         System.out.print("Enter Patient ID to update: ");
                         String updateId = input.next();
 
@@ -138,48 +176,57 @@ public class Main {
                         System.out.print("Enter New Next of Kin: ");
                         String newKin = input.next();
 
-                        // Update the patient record in the file
-                        FileManager.updatePatient(updateId, newContact, newKin);
-
-                        // Record the action in an audit log if your FileManager supports it
-                        FileManager.logAudit("Updated patient: " + updateId);
-
+                        boolean patientUpdated = FileManager.updatePatient(updateId, newContact, newKin);
+                        if (patientUpdated) {
+                            FileManager.logAudit("Updated patient: " + updateId);
+                        }
                     } catch (Exception e) {
-
                         System.out.println(RED + "Error updating patient." + RESET);
                     }
 
-                    pause();
+                    input.nextLine();
+                    pause(input);
                     break;
+                }
 
-                case 4: // DELETE PATIENT
-
+                case 4: {// DELETE PATIENT
+                	if (!requirePermission(currentUser, "deletePatient")) {
+                	    pause(input);
+                	    break;
+                	}
                     try {
 
                         System.out.print("Enter Patient ID to delete: ");
                         String deleteId = input.next();
 
-                        // Delete patient from file
-                        FileManager.deletePatient(deleteId);
-
-                        // Record the action in audit log
-                        FileManager.logAudit("Deleted patient: " + deleteId);
+                        boolean deleted = FileManager.deletePatient(deleteId);
+                        if (deleted) {
+                            FileManager.logAudit("Deleted patient: " + deleteId);
+                        }
 
                     } catch (Exception e) {
 
                         System.out.println(RED + "Error deleting patient." + RESET);
                     }
 
-                    pause();
+                    input.nextLine();
+                    pause(input);
                     break;
-
+            }
                 // =========================================================
                 // USER / ROLE MANAGEMENT
                 // =========================================================
 
-                case 5: // ADD USER
+                case 5: {
+                    if (!requirePermission(currentUser, "createUser")) {
+                        pause(input);
+                        break;
+                    }
 
                     try {
+                        input.nextLine();
+                        System.out.print("Enter Full Name: ");
+                        String fullName = input.nextLine();
 
                         System.out.print("Enter Username: ");
                         String username = input.next();
@@ -187,261 +234,439 @@ public class Main {
                         System.out.print("Enter Password: ");
                         String password = input.next();
 
-                        System.out.print("Enter Role (Admin/Manager/User): ");
+                        System.out.print("Enter Role (ADMIN/MANAGER/USER): ");
                         String roleName = input.next();
 
-                        // Create role and assign permissions
-                        Role role = new Role(roleName);
+                        User newUser = new User(fullName, username, password);
+                        newUser.addRole(new Role(roleName));
 
-                        if (roleName.equalsIgnoreCase("Admin")) {
-                            role.addPermission("createUser");
-                            role.addPermission("deleteUser");
-                            role.addPermission("updateSystemConfig");
+                        boolean userAdded = userManager.addUser(newUser);
+
+                        if (userAdded) {
+                            FileManager.logAudit("User created by " + currentUser.getUsername() + ": " + username);
+                            System.out.println(GREEN + "User added successfully." + RESET);
+                        } else {
+                            System.out.println(RED + "Failed to add user." + RESET);
                         }
-
-                        if (roleName.equalsIgnoreCase("Manager")) {
-                            role.addPermission("approveTransaction");
-                            role.addPermission("viewReports");
-                        }
-
-                        if (roleName.equalsIgnoreCase("User")) {
-                            role.addPermission("viewOwnData");
-                        }
-
-                        // Create and store the user
-                        User user = new User(username, password, role);
-                        userManager.addUser(user);
-
-                        // Persist to file if your FileManager supports it
-                        FileManager.saveUser(username + " " + roleName);
-
-                        // Record audit log
-                        FileManager.logAudit("Added user: " + username);
-
                     } catch (Exception e) {
-
                         System.out.println(RED + "Error adding user." + RESET);
+                        input.nextLine();
                     }
 
-                    pause();
+                    pause(input);
                     break;
+                }
 
-                case 6: // VIEW USERS
+                case 6: {
+                    if (!requirePermission(currentUser, "viewUser")) {
+                        pause(input);
+                        break;
+                    }
 
-                    System.out.println(BLUE + "\n--- User Records ---" + RESET);
+                    System.out.print("Enter Username to View: ");
+                    String usernameToView = input.next();
 
-                    userManager.viewUsers();
+                    userManager.viewSingleUser(usernameToView);
+                    FileManager.logAudit("Viewed single user: " + usernameToView + " by " + currentUser.getUsername());
 
-                    pause();
+                    input.nextLine();
+                    pause(input);
                     break;
+                }
 
-                case 7: // UPDATE USER
+                case 7: {
+                    if (!requirePermission(currentUser, "viewAllUsers")) {
+                        pause(input);
+                        break;
+                    }
+
+                    userManager.viewAllUsers();
+                    FileManager.logAudit("Viewed all users by " + currentUser.getUsername());
+
+                    input.nextLine();
+                    pause(input);
+                    break;
+                }
+
+                case 8: {
+                    if (!requirePermission(currentUser, "updateUser")) {
+                        pause(input);
+                        break;
+                    }
 
                     try {
+                        System.out.print("Enter Username to Update: ");
+                        String usernameToUpdate = input.next();
 
-                        System.out.print("Enter Username to update: ");
-                        String updateUsername = input.next();
+                        input.nextLine();
+                        System.out.print("Enter New Full Name: ");
+                        String newFullName = input.nextLine();
 
                         System.out.print("Enter New Password: ");
                         String newPassword = input.next();
 
-                        userManager.updateUser(updateUsername, newPassword);
+                        boolean userUpdated = userManager.updateUser(usernameToUpdate, newFullName, newPassword);
 
-                        FileManager.logAudit("Updated user: " + updateUsername);
-
+                        if (userUpdated) {
+                            FileManager.logAudit("User updated by " + currentUser.getUsername() + ": " + usernameToUpdate);
+                            System.out.println(GREEN + "User updated successfully." + RESET);
+                        } else {
+                            System.out.println(RED + "User update failed." + RESET);
+                        }
                     } catch (Exception e) {
-
                         System.out.println(RED + "Error updating user." + RESET);
+                        input.nextLine();
                     }
 
-                    pause();
+                    input.nextLine();
+                    pause(input);
                     break;
+                }
 
-                case 8: // DELETE USER
-
-                    try {
-
-                        System.out.print("Enter Username to delete: ");
-                        String deleteUsername = input.next();
-
-                        userManager.deleteUser(deleteUsername);
-
-                        FileManager.logAudit("Deleted user: " + deleteUsername);
-
-                    } catch (Exception e) {
-
-                        System.out.println(RED + "Error deleting user." + RESET);
+                case 9: {
+                    if (!requirePermission(currentUser, "deleteUser")) {
+                        pause(input);
+                        break;
                     }
 
-                    pause();
+                    System.out.print("Enter Username to Delete: ");
+                    String usernameToDelete = input.next();
+
+                    boolean userDeleted = userManager.deleteUser(usernameToDelete);
+
+                    if (userDeleted) {
+                        FileManager.logAudit("User deleted by " + currentUser.getUsername() + ": " + usernameToDelete);
+                        System.out.println(GREEN + "User deleted successfully." + RESET);
+                    } else {
+                        System.out.println(RED + "User delete failed." + RESET);
+                    }
+
+                    input.nextLine();
+                    pause(input);
                     break;
+                }
 
-                // =========================================================
-                // APPOINTMENT MANAGEMENT
-                // =========================================================
+                case 10: {
+                    if (!requirePermission(currentUser, "viewOwnProfile")) {
+                        pause(input);
+                        break;
+                    }
 
-                case 9: // SCHEDULE APPOINTMENT
+                    userManager.viewOwnProfile(currentUser);
+                    FileManager.logAudit("Viewed own profile: " + currentUser.getUsername());
+
+                    input.nextLine();
+                    pause(input);
+                    break;
+                }
+
+                case 11: {
+                    if (!requirePermission(currentUser, "scheduleAppointment")) {
+                        pause(input);
+                        break;
+                    }
 
                     try {
-
                         System.out.print("Enter Patient ID: ");
                         String patientID = input.next();
 
                         System.out.print("Enter Staff ID: ");
                         String staffID = input.next();
 
-                        // Clear leftover newline from previous scanner input
                         input.nextLine();
-
                         System.out.print("Enter Appointment Date and Time (yyyy-MM-dd HH:mm): ");
                         String inputTime = input.nextLine();
 
-                        // Convert text into LocalDateTime
                         LocalDateTime time = LocalDateTime.parse(inputTime, format);
 
-                        // Create appointment with default starting status
                         Appointment appt = new Appointment(patientID, staffID, time, Status.SCHEDULED);
 
-                        // Add appointment to in-memory appointment list
-                        appointmentManager.addAppointment(appt);
+                        boolean appointmentAdded = appointmentManager.addAppointment(appt);
 
-                        // Save appointment to file if your FileManager supports it
-                        FileManager.saveAppointment(patientID + " " + staffID + " " + time + " " + Status.SCHEDULED);
-
-                        // Increase appointment metric
-                        Metrics.appointmentsBooked++;
-
-                        // Notify staff or system observers
-                        notificationService.notifyObservers("Appointment booked for patient: " + patientID);
-
-                        // Record audit
-                        FileManager.logAudit("Booked appointment for patient: " + patientID);
+                        if (appointmentAdded) {
+                            FileManager.saveAppointment(appt);
+                            Metrics.appointmentsBooked++;
+                            notificationService.notifyObservers("Appointment booked for patient: " + patientID);
+                            FileManager.logAudit("Booked appointment for patient: " + patientID + " by " + currentUser.getUsername());
+                            System.out.println(GREEN + "Appointment scheduled successfully." + RESET);
+                        } else {
+                            Metrics.conflicts++;
+                            FileManager.logAudit("Appointment conflict for patient: " + patientID + " by " + currentUser.getUsername());
+                            System.out.println(RED + "Scheduling conflict detected." + RESET);
+                        }
 
                     } catch (Exception e) {
-
-                        System.out.println(RED + "Error scheduling appointment. Check date/time format." + RESET);
-
-                        // Track scheduling conflicts or failed scheduling attempts
-                        Metrics.conflicts++;
+                        System.out.println(RED + "Error scheduling appointment." + RESET);
+                        input.nextLine();
                     }
 
-                    pause();
+                    pause(input);
                     break;
+                }
 
-                case 10: // VIEW APPOINTMENTS
-
-                    System.out.println(BLUE + "\n--- Appointment Records ---" + RESET);
+                case 12: {
+                    if (!requirePermission(currentUser, "viewAppointments")) {
+                        pause(input);
+                        break;
+                    }
 
                     appointmentManager.viewAppointments();
+                    FileManager.logAudit("Viewed appointments by " + currentUser.getUsername());
 
-                    pause();
+                    input.nextLine();
+                    pause(input);
                     break;
+                }
 
-                case 11: // UPDATE APPOINTMENT STATUS
-
-                    try {
-
-                        // Clear scanner buffer before reading full line input
-                        input.nextLine();
-
-                        System.out.print("Enter Appointment Date and Time (yyyy-MM-dd HH:mm): ");
-                        String timeInput = input.nextLine();
-
-                        LocalDateTime appointmentTime = LocalDateTime.parse(timeInput, format);
-
-                        System.out.print("Enter Status (COMPLETED/CANCELLED/NO_SHOW): ");
-                        String statusInput = input.next();
-
-                        // Convert entered text to enum value
-                        Status newStatus = Status.valueOf(statusInput.toUpperCase());
-
-                        // Update appointment status
-                        appointmentManager.updateStatus(appointmentTime, newStatus);
-
-                        FileManager.logAudit("Updated appointment status to " + newStatus + " for time: " + appointmentTime);
-
-                    } catch (Exception e) {
-
-                        System.out.println(RED + "Invalid appointment time or status entered." + RESET);
+                case 13: {
+                    if (!requirePermission(currentUser, "updateAppointmentStatus")) {
+                        pause(input);
+                        break;
                     }
 
-                    pause();
+                    try {
+                        input.nextLine();
+                        System.out.print("Enter Appointment Time to Update (yyyy-MM-dd HH:mm): ");
+                        String statusTime = input.nextLine();
+
+                        LocalDateTime appointmentTime = LocalDateTime.parse(statusTime, format);
+
+                        System.out.print("Enter New Status (SCHEDULED, COMPLETED, CANCELLED, NO_SHOW): ");
+                        String statusInput = input.next().toUpperCase();
+
+                        Appointment.Status newStatus = Appointment.Status.valueOf(statusInput);
+
+                        boolean statusUpdated = appointmentManager.updateStatus(appointmentTime, newStatus);
+
+                        if (statusUpdated) {
+                            FileManager.overwriteAppointments(appointmentManager.getAppointments());
+                            FileManager.logAudit("Updated appointment status to " + newStatus + " by " + currentUser.getUsername());
+                            System.out.println(GREEN + "Appointment status updated." + RESET);
+                        } else {
+                            System.out.println(RED + "Appointment not found." + RESET);
+                        }
+                    } catch (Exception e) {
+                        System.out.println(RED + "Error updating appointment status." + RESET);
+                        input.nextLine();
+                    }
+
+                    pause(input);
                     break;
+                }
 
-                case 12: // VIEW WEEKLY METRICS REPORT
-
-                    System.out.println(PURPLE + "\n--- Weekly Metrics Report ---" + RESET);
-
-                    Metrics.weeklyReport();
-
-                    pause();
-                    break;
-
-                // =========================================================
-                // EHR / TRIAGE / BILLING
-                // =========================================================
-
-                case 13: // RECORD PATIENT VISIT (EHR)
+                case 14: {
+                    if (!requirePermission(currentUser, "processPayment")) {
+                        pause(input);
+                        break;
+                    }
 
                     try {
+                        System.out.print("Enter Billing Amount: ");
+                        double amount = input.nextDouble();
 
+                        System.out.print("Choose Payment Method (1-Cash, 2-Card, 3-Insurance): ");
+                        int method = input.nextInt();
+
+                        Payment payment = null;
+
+                        switch (method) {
+                            case 1:
+                                payment = new CashPayment();
+                                break;
+                            case 2:
+                                payment = new CardPayment();
+                                break;
+                            case 3:
+                                payment = new InsuranceBilling();
+                                break;
+                            default:
+                                System.out.println(RED + "Invalid payment option." + RESET);
+                                input.nextLine();
+                                pause(input);
+                                break;
+                        }
+
+                        if (payment != null) {
+                            payment.processPayment(amount);
+                            FileManager.logAudit("Processed payment by " + currentUser.getUsername());
+                            System.out.println(GREEN + "Payment processed successfully." + RESET);
+                        }
+
+                    } catch (Exception e) {
+                        System.out.println(RED + "Error processing payment." + RESET);
+                        input.nextLine();
+                    }
+
+                    input.nextLine();
+                    pause(input);
+                    break;
+                }
+
+                case 15: {
+                    if (!requirePermission(currentUser, "recordEHR")) {
+                        pause(input);
+                        break;
+                    }
+
+                    try {
                         System.out.print("Enter Patient ID: ");
                         String pid = input.next();
 
-                        System.out.print("Enter Visit Date: ");
+                        System.out.print("Enter Visit Date (yyyy-MM-dd): ");
                         String date = input.next();
+
+                        input.nextLine();
+                        System.out.print("Enter Purpose for Processing: ");
+                        String purpose = input.nextLine();
+
+                        System.out.print("Enter Temperature: ");
+                        double temperature = input.nextDouble();
 
                         System.out.print("Enter Heart Rate: ");
                         int hr = input.nextInt();
 
-                        System.out.print("Enter Blood Pressure: ");
-                        int bp = input.nextInt();
+                        input.nextLine();
+                        System.out.print("Enter Blood Pressure (example 120/80): ");
+                        String bp = input.nextLine();
 
+                        System.out.print("Enter Oxygen Level: ");
+                        int oxygen = input.nextInt();
+
+                        input.nextLine();
                         System.out.print("Enter Diagnosis: ");
-                        String diagnosis = input.next();
+                        String diagnosis = input.nextLine();
 
-                        // Create visit record
-                        VisitRecord visit = new VisitRecord(pid, date, hr, bp, diagnosis);
+                        System.out.print("Enter Prescription: ");
+                        String prescription = input.nextLine();
 
-                        // Show visit data on screen
+                        System.out.print("Enter Allergies: ");
+                        String allergies = input.nextLine();
+
+                        System.out.print("Enter Lab Results: ");
+                        String labResults = input.nextLine();
+
+                        System.out.print("Enter Immunization Date: ");
+                        String immunizationDate = input.nextLine();
+
+                        vitals.Vitals vitals = new vitals.Vitals(temperature, hr, bp, oxygen);
+
+                        VisitRecord visit = new VisitRecord(
+                            pid, date, purpose, vitals, diagnosis, prescription,
+                            allergies, labResults, immunizationDate
+                        );
+
+                        FileManager.saveVisitRecord(visit);
+
                         System.out.println(GREEN + "\nVisit Record Saved." + RESET);
                         visit.display();
 
-                        // Optional audit
-                        FileManager.logAudit("Recorded visit for patient: " + pid);
+                        FileManager.logAudit("Recorded visit for patient: " + pid + " by " + currentUser.getUsername());
 
                     } catch (Exception e) {
-
                         System.out.println(RED + "Error recording patient visit." + RESET);
+                        input.nextLine();
                     }
 
-                    pause();
+                    pause(input);
                     break;
+                }
 
-                case 14: // TRIAGE RISK SCORE + ANALYTICS
+                case 16: {
+                    if (!requirePermission(currentUser, "viewEHR")) {
+                        pause(input);
+                        break;
+                    }
+
+                    FileManager.readAllVisitRecords();
+                    FileManager.logAudit("Viewed all EHR records by " + currentUser.getUsername());
+
+                    input.nextLine();
+                    pause(input);
+                    break;
+                }
+
+                case 17: {
+                    if (!requirePermission(currentUser, "searchEHR")) {
+                        pause(input);
+                        break;
+                    }
+
+                    System.out.print("Enter Patient ID: ");
+                    String patientIdSearch = input.next();
+
+                    List<VisitRecord> patientVisits = FileManager.getVisitRecordsByPatientId(patientIdSearch);
+                    FileManager.displayVisitRecordList(patientVisits);
+
+                    FileManager.logAudit("Searched EHR by patient ID: " + patientIdSearch + " by " + currentUser.getUsername());
+
+                    input.nextLine();
+                    pause(input);
+                    break;
+                }
+
+                case 18: {
+                    if (!requirePermission(currentUser, "searchEHR")) {
+                        pause(input);
+                        break;
+                    }
+
+                    input.nextLine();
+                    System.out.print("Enter Diagnosis: ");
+                    String diagnosisSearch = input.nextLine();
+
+                    List<VisitRecord> diagnosisResults = FileManager.searchVisitRecordsByDiagnosis(diagnosisSearch);
+                    FileManager.displayVisitRecordList(diagnosisResults);
+
+                    FileManager.logAudit("Searched EHR by diagnosis: " + diagnosisSearch + " by " + currentUser.getUsername());
+
+                    pause(input);
+                    break;
+                }
+
+                case 19: {
+                    if (!requirePermission(currentUser, "searchEHR")) {
+                        pause(input);
+                        break;
+                    }
+
+                    System.out.print("Enter Date (yyyy-MM-dd): ");
+                    String dateSearch = input.next();
+
+                    List<VisitRecord> dateResults = FileManager.searchVisitRecordsByDate(dateSearch);
+                    FileManager.displayVisitRecordList(dateResults);
+
+                    FileManager.logAudit("Searched EHR by date: " + dateSearch + " by " + currentUser.getUsername());
+
+                    input.nextLine();
+                    pause(input);
+                    break;
+                }
+
+                case 20: {
+                    if (!requirePermission(currentUser, "runTriage")) {
+                        pause(input);
+                        break;
+                    }
 
                     try {
+                        System.out.print("Enter Patient ID: ");
+                        String triagePatientId = input.next();
 
                         System.out.print("Enter Current Heart Rate: ");
                         int heartRate = input.nextInt();
 
-                        // Example previous readings used for moving average
-                        // Later, this can be replaced with real visit history from file or memory
                         ArrayList<Integer> previousRates = new ArrayList<>();
-                        previousRates.add(80);
-                        previousRates.add(85);
-                        previousRates.add(90);
 
-                        // Determine risk category
+                        for (VisitRecord record : FileManager.getVisitRecordsByPatientId(triagePatientId)) {
+                            previousRates.add(record.getVitals().getHeartRate());
+                        }
+
                         String risk = Triage.riskScore(heartRate);
-
-                        // Compute average of previous vitals
-                        double average = Triage.movingAverage(previousRates);
-
-                        // Check for large deviation from expected readings
+                        double average = previousRates.isEmpty() ? heartRate : Triage.movingAverage(previousRates);
                         boolean deviation = Triage.hasLargeDeviation(heartRate, average);
 
                         System.out.println(BLUE + "\n--- TRIAGE RESULT ---" + RESET);
+                        System.out.println("Patient ID: " + triagePatientId);
                         System.out.println("Current Heart Rate: " + heartRate);
                         System.out.println("Risk Level: " + risk);
                         System.out.println("Average of Previous Readings: " + average);
@@ -452,116 +677,94 @@ public class Main {
                             System.out.println(GREEN + "No major deviation detected." + RESET);
                         }
 
-                        // Increment high-risk counter if needed
                         if (risk.equals("HIGH")) {
                             Metrics.highRiskPatients++;
-
-                            // Notify observers when a high-risk case occurs
-                            notificationService.notifyObservers("HIGH RISK TRIAGE ALERT. Heart rate: " + heartRate);
+                            notificationService.notifyObservers("HIGH RISK TRIAGE ALERT for patient " + triagePatientId);
                         }
 
-                        FileManager.logAudit("Performed triage for heart rate: " + heartRate + ", risk: " + risk);
+                        FileManager.logAudit("Performed triage for patient: " + triagePatientId + " by " + currentUser.getUsername());
 
                     } catch (Exception e) {
-
                         System.out.println(RED + "Invalid triage input." + RESET);
-
-                        // Clear bad scanner input if needed
                         input.nextLine();
                     }
 
-                    pause();
+                    pause(input);
                     break;
+                }
 
-                case 15: // PROCESS PAYMENT
-
-                    try {
-
-                        System.out.println("Select Payment Type");
-                        System.out.println("1. Cash");
-                        System.out.println("2. Card");
-                        System.out.println("3. Insurance");
-
-                        int type = input.nextInt();
-
-                        System.out.print("Enter Amount: ");
-                        double amount = input.nextDouble();
-
-                        // Use polymorphism to select the correct payment strategy
-                        Payment payment;
-
-                        if (type == 1) {
-                            payment = new CashPayment();
-                        } else if (type == 2) {
-                            payment = new CardPayment();
-                        } else {
-                            payment = new InsuranceBilling();
-                        }
-
-                        // Process selected payment type
-                        payment.processPayment(amount);
-
-                        FileManager.logAudit("Processed payment of amount: " + amount);
-
-                    } catch (Exception e) {
-
-                        System.out.println(RED + "Error processing payment." + RESET);
+                case 21: {
+                    if (!requirePermission(currentUser, "viewReports")) {
+                        pause(input);
+                        break;
                     }
 
-                    pause();
-                    break;
+                    System.out.println(YELLOW + "\n--- WEEKLY METRICS REPORT ---" + RESET);
+                    System.out.println("Appointments Booked: " + Metrics.appointmentsBooked);
+                    System.out.println("Scheduling Conflicts: " + Metrics.conflicts);
+                    System.out.println("High Risk Patients: " + Metrics.highRiskPatients);
 
-                case 16: // EXIT
+                    FileManager.logAudit("Viewed weekly metrics report by " + currentUser.getUsername());
 
-                    System.out.println(GREEN + "System Closing..." + RESET);
+                    input.nextLine();
+                    pause(input);
                     break;
+                }
+
+                case 22: {
+                    System.out.println(GREEN + "Exiting EMHR System. Goodbye!" + RESET);
+                    FileManager.logAudit("User logged out: " + currentUser.getUsername());
+                    input.close();
+                    System.exit(0);
+                    break;
+                }
 
                 default:
 
                     System.out.println(RED + "Invalid Choice. Please try again." + RESET);
-                    pause();
+                    input.nextLine();
+                    pause(input);
             }
 
-        } while (choice != 16);
+        } while (choice != 22);
 
         // Close scanner to free system resources
         input.close();
     }
 
+    
     // Displays the system menu
     public static void displayMenu() {
-    	 System.out.println(CYAN + "==================================================" + RESET);
-         System.out.println(GREEN + "        EASTERN MEDICAL HEALTH REGION SYSTEM      " + RESET);
-         System.out.println(CYAN + "==================================================" + RESET);
+    	
+    	
+    	System.out.println(CYAN + "\n===== EMHR SYSTEM MENU =====" + RESET);
+    	System.out.println("1. Add Patient");
+    	System.out.println("2. View Patients");
+    	System.out.println("3. Update Patient");
+    	System.out.println("4. Delete Patient");
 
-         System.out.println(YELLOW + "PATIENT MANAGEMENT" + RESET);
-         System.out.println("1.  Add Patient");
-         System.out.println("2.  View Patients");
-         System.out.println("3.  Update Patient");
-         System.out.println("4.  Delete Patient");
+    	System.out.println("5. Add User");
+    	System.out.println("6. View Single User");
+    	System.out.println("7. View All Users");
+    	System.out.println("8. Update User");
+    	System.out.println("9. Delete User");
+    	System.out.println("10. View My Profile");
 
-         System.out.println(YELLOW + "\nUSER / ROLE MANAGEMENT" + RESET);
-         System.out.println("5.  Add User");
-         System.out.println("6.  View Users");
-         System.out.println("7.  Update User");
-         System.out.println("8.  Delete User");
+    	System.out.println("11. Schedule Appointment");
+    	System.out.println("12. View Appointments");
+    	System.out.println("13. Update Appointment Status");
+    	System.out.println("14. Process Payment");
 
-         System.out.println(YELLOW + "\nAPPOINTMENT MANAGEMENT" + RESET);
-         System.out.println("9.  Schedule Appointment");
-         System.out.println("10. View Appointments");
-         System.out.println("11. Update Appointment Status");
-         System.out.println("12. View Weekly Metrics Report");
+    	System.out.println("15. Record Patient Visit (EHR)");
+    	System.out.println("16. View All EHR Records");
+    	System.out.println("17. Search EHR by Patient ID");
+    	System.out.println("18. Search EHR by Diagnosis");
+    	System.out.println("19. Search EHR by Date");
+    	System.out.println("20. Triage Risk Score + Analytics");
+    	System.out.println("21. Weekly Metrics Report");
+    	System.out.println("22. Exit");
 
-         System.out.println(YELLOW + "\nCLINICAL / BILLING" + RESET);
-         System.out.println("13. Record Patient Visit (EHR)");
-         System.out.println("14. Triage Risk Score & Analytics");
-         System.out.println("15. Process Payment");
-
-         System.out.println(YELLOW + "\nSYSTEM" + RESET);
-         System.out.println("16. Exit");
-
-         System.out.println(CYAN + "--------------------------------------------------" + RESET);
-     }
+    }
 
     // Clears the console screen
     public static void clearScreen() {
@@ -586,15 +789,16 @@ public class Main {
     }
 
     // Pauses program until user presses Enter
-    public static void pause() {
-
+    public static void pause(Scanner input) {
         System.out.println("\nPress Enter to continue...");
-
-        try {
-
-            System.in.read();
-
-        } catch (Exception e) {
-        }
+        input.nextLine();
     }
-}
+    
+    
+    public static boolean requirePermission(User currentUser, String permission) {
+        if (currentUser == null || !currentUser.hasPermission(permission)) {
+            System.out.println(RED + "Access Denied. Missing permission: " + permission + RESET);
+            return false;
+        }
+        return true;
+    }
