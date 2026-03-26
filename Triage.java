@@ -1,4 +1,5 @@
-package triage;
+
+ package triage;
 
 
 import java.util.ArrayList;
