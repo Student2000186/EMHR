@@ -1,131 +1,304 @@
 package fileManager;
 
-import java.io.*;
-import java.util.List;
-import java.util.ArrayList;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import visitRecord.VisitRecord;
+import java.time.LocalDateTime;
+
+import patient.Patient;
+import appointment.Appointment;
+
 
 public class FileManager {
 
-    // Saves patient data to the patients.txt file
-    // The 'true' means new data is added without deleting old data
-    public static void savePatient(String data) {
+    private static final String PATIENT_FILE = "patients.txt";
+    private static final String USER_FILE = "users.txt";
+    private static final String APPOINTMENT_FILE = "appointments.txt";
+    private static final String AUDIT_FILE = "audit.txt";
+    private static final String VISIT_FILE = "visits.txt";
 
-        try {
-            FileWriter fw = new FileWriter("patients.txt", true);
-            fw.write(data + "\n");
-            fw.close();
-        }
-        catch (IOException e) {
+    // =========================
+    // PATIENT METHODS
+    // =========================
+
+    public static void savePatient(Patient patient) {
+        try (FileWriter fw = new FileWriter(PATIENT_FILE, true)) {
+            fw.write(patient.toFileString() + "\n");
+        } catch (IOException e) {
             System.out.println("File Error: " + e.getMessage());
         }
     }
 
-    // Reads and displays all patients stored in patients.txt
-    public static void readPatients() {
+    public static List<Patient> loadPatients() {
+        List<Patient> patients = new ArrayList<>();
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader("patients.txt"));
-            String line;
-
-            // Read each line until end of file
-            while ((line = br.readLine()) != null) {
-                System.out.println(line);
+            File file = new File(PATIENT_FILE);
+            if (!file.exists()) {
+                return patients;
             }
 
-            br.close();
-        }
-        catch (IOException e) {
-            System.out.println("File Error: " + e.getMessage());
-        }
-    }
-
-    // Updates a patient's contact and next of kin using the patient ID
-    public static void updatePatient(String id, String newContact, String newKin) {
-
-        try {
-
-            // Read all existing lines from file
-            List<String> lines = Files.readAllLines(Paths.get("patients.txt"));
-
-            // New list to hold updated records
-            List<String> updated = new ArrayList<>();
-
+            List<String> lines = Files.readAllLines(Paths.get(PATIENT_FILE));
             for (String line : lines) {
-
-                // If the line belongs to the patient being updated
-                if (line.startsWith(id + " ")) {
-                    updated.add(id + " " + newContact + " " + newKin);
-                }
-                else {
-                    updated.add(line);
+                if (!line.trim().isEmpty()) {
+                    Patient patient = Patient.fromFileString(line);
+                    if (patient != null) {
+                        patients.add(patient);
+                    }
                 }
             }
+        } catch (IOException e) {
+            System.out.println("File Error: " + e.getMessage());
+        }
 
-            // Write the updated data back to the file
-            Files.write(Paths.get("patients.txt"), updated);
+        return patients;
+    }
 
+    public static void readPatients() {
+        List<Patient> patients = loadPatients();
+
+        if (patients.isEmpty()) {
+            System.out.println("No patient records found.");
+            return;
+        }
+
+        for (Patient patient : patients) {
+            patient.display();
+            System.out.println("----------------------");
+        }
+    }
+
+    public static boolean updatePatient(String id, String newContact, String newKin) {
+        List<Patient> patients = loadPatients();
+        boolean found = false;
+
+        for (Patient patient : patients) {
+            if (patient.getId().equalsIgnoreCase(id)) {
+                patient.setContact(newContact);
+                patient.setNextOfKin(newKin);
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            overwritePatients(patients);
             System.out.println("Patient Updated Successfully!");
+        } else {
+            System.out.println("Patient ID not found.");
         }
-        catch (IOException e) {
-            System.out.println("File Error: " + e.getMessage());
-        }
+
+        return found;
     }
 
-    
- // Saves a user record from the file using userID
-    public static void saveUser(String data) {
-        try {
-            FileWriter fw = new FileWriter("users.txt", true);
-            fw.write(data + "\n");
-            fw.close();
-        } catch (IOException e) {
-            System.out.println("File Error: " + e.getMessage());
-        }
-    }
+    public static boolean deletePatient(String id) {
+        List<Patient> patients = loadPatients();
+        boolean removed = patients.removeIf(patient -> patient.getId().equalsIgnoreCase(id));
 
-    // Deletes a patient record from the file using patient ID
-    public static void deletePatient(String id) {
-
-        try {
-
-            // Read all lines from file
-            List<String> lines = Files.readAllLines(Paths.get("patients.txt"));
-
-            // Remove any line that starts with the patient ID
-            lines.removeIf(line -> line.startsWith(id + " "));
-
-            // Save remaining lines back to file
-            Files.write(Paths.get("patients.txt"), lines);
-
+        if (removed) {
+            overwritePatients(patients);
             System.out.println("Patient Deleted!");
+        } else {
+            System.out.println("Patient ID not found.");
         }
-        catch (IOException e) {
+
+        return removed;
+    }
+
+    private static void overwritePatients(List<Patient> patients) {
+        try (FileWriter fw = new FileWriter(PATIENT_FILE, false)) {
+            for (Patient patient : patients) {
+                fw.write(patient.toFileString() + "\n");
+            }
+        } catch (IOException e) {
             System.out.println("File Error: " + e.getMessage());
         }
     }
-    
-    
-    
-    // Saves the Appointments created to a file
-    public static void saveAppointment(String data) {
-        try {
-            FileWriter fw = new FileWriter("appointments.txt", true);
+
+    // =========================
+    // USER METHODS
+    // =========================
+
+    public static void saveUser(String data) {
+        try (FileWriter fw = new FileWriter(USER_FILE, true)) {
             fw.write(data + "\n");
-            fw.close();
         } catch (IOException e) {
             System.out.println("File Error: " + e.getMessage());
         }
     }
-    
-    public static void logAudit(String action) {
-        try {
-            FileWriter fw = new FileWriter("audit.txt", true);
-            fw.write(action + "\n");
-            fw.close();
+
+    // =========================
+    // APPOINTMENT METHODS
+    // =========================
+
+    public static void saveAppointment(Appointment appointment) {
+        try (FileWriter fw = new FileWriter(APPOINTMENT_FILE, true)) {
+            fw.write(appointment.toFileString() + "\n");
         } catch (IOException e) {
             System.out.println("File Error: " + e.getMessage());
+        }
+    }
+
+    public static List<Appointment> loadAppointments() {
+        List<Appointment> appointments = new ArrayList<>();
+
+        try {
+            File file = new File(APPOINTMENT_FILE);
+            if (!file.exists()) {
+                return appointments;
+            }
+
+            List<String> lines = Files.readAllLines(Paths.get(APPOINTMENT_FILE));
+            for (String line : lines) {
+                if (!line.trim().isEmpty()) {
+                    Appointment appointment = Appointment.fromFileString(line);
+                    if (appointment != null) {
+                        appointments.add(appointment);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("File Error: " + e.getMessage());
+        }
+
+        return appointments;
+    }
+
+    public static void overwriteAppointments(List<Appointment> appointments) {
+        try (FileWriter fw = new FileWriter(APPOINTMENT_FILE, false)) {
+            for (Appointment appointment : appointments) {
+                fw.write(appointment.toFileString() + "\n");
+            }
+        } catch (IOException e) {
+            System.out.println("File Error: " + e.getMessage());
+        }
+    }
+
+    // =========================
+    // VISIT / EHR METHODS
+    // =========================
+
+    public static void saveVisitRecord(VisitRecord visit) {
+        try (FileWriter fw = new FileWriter(VISIT_FILE, true)) {
+            fw.write(visit.toFileString() + "\n");
+        } catch (IOException e) {
+            System.out.println("File Error: " + e.getMessage());
+        }
+    }
+
+    public static List<VisitRecord> loadVisitRecords() {
+        List<VisitRecord> visits = new ArrayList<>();
+
+        try {
+            File file = new File(VISIT_FILE);
+            if (!file.exists()) {
+                return visits;
+            }
+
+            List<String> lines = Files.readAllLines(Paths.get(VISIT_FILE));
+            for (String line : lines) {
+                if (!line.trim().isEmpty()) {
+                    VisitRecord visit = VisitRecord.fromFileString(line);
+                    if (visit != null) {
+                        visits.add(visit);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("File Error: " + e.getMessage());
+        }
+
+        return visits;
+    }
+
+    public static List<VisitRecord> getVisitRecordsByPatientId(String patientId) {
+        List<VisitRecord> result = new ArrayList<>();
+
+        for (VisitRecord visit : loadVisitRecords()) {
+            if (visit.getPatientID().equalsIgnoreCase(patientId)) {
+                result.add(visit);
+            }
+        }
+
+        return result;
+    }
+
+    // =========================
+    // AUDIT
+    // =========================
+
+    public static void logAudit(String action) {
+        try (FileWriter fw = new FileWriter(AUDIT_FILE, true)) {
+            fw.write(LocalDateTime.now() + " | " + action + "\n");
+        } catch (IOException e) {
+            System.out.println("File Error: " + e.getMessage());
+        }
+    }
+    public static List<String> loadRawUsers() {
+        List<String> lines = new ArrayList<>();
+
+        try {
+            File file = new File(USER_FILE);
+            if (!file.exists()) {
+                return lines;
+            }
+
+            lines = Files.readAllLines(Paths.get(USER_FILE));
+        } catch (IOException e) {
+            System.out.println("File Error: " + e.getMessage());
+        }
+
+        return lines;
+    }
+    public static void readAllVisitRecords() {
+        List<VisitRecord> visits = loadVisitRecords();
+
+        if (visits.isEmpty()) {
+            System.out.println("No visit records found.");
+            return;
+        }
+
+        for (VisitRecord visit : visits) {
+            visit.display();
+            System.out.println("----------------------");
+        }
+    }
+    public static List<VisitRecord> searchVisitRecordsByDiagnosis(String diagnosis) {
+        List<VisitRecord> results = new ArrayList<>();
+
+        for (VisitRecord visit : loadVisitRecords()) {
+            if (visit.getDiagnosis().equalsIgnoreCase(diagnosis)) {
+                results.add(visit);
+            }
+        }
+
+        return results;
+    }
+    public static List<VisitRecord> searchVisitRecordsByDate(String date) {
+        List<VisitRecord> results = new ArrayList<>();
+
+        for (VisitRecord visit : loadVisitRecords()) {
+            if (visit.getDate().equalsIgnoreCase(date)) {
+                results.add(visit);
+            }
+        }
+
+        return results;
+    }
+    public static void displayVisitRecordList(List<VisitRecord> visits) {
+        if (visits.isEmpty()) {
+            System.out.println("No matching visit records found.");
+            return;
+        }
+
+        for (VisitRecord visit : visits) {
+            visit.display();
+            System.out.println("----------------------");
         }
     }
 }
