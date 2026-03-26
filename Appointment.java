@@ -1,99 +1,73 @@
-package appointment;
 
 
-//LocalDateTime is used to store both date and time of the appointment
-import java.time.LocalDateTime;
-
-public class Appointment {
-	
-	// Enum is used so status can only be one of these fixed values
     public enum Status { SCHEDULED, COMPLETED, CANCELLED, NO_SHOW }
 
-
-    // Stores the patient linked to the appointment
     private String patientID;
-
-    // Stores the staff member linked to the appointment
     private String staffID;
-
-    // Stores the appointment date and time
     private LocalDateTime time;
-
-    // Stores the current status of the appointment
     private Status status;
-    
- // Constructor used when creating a new appointment
-    public Appointment(String patientID, String staffID, LocalDateTime time, Status status){
+
+    public Appointment(String patientID, String staffID, LocalDateTime time, Status status) {
         this.patientID = patientID;
         this.staffID = staffID;
         this.time = time;
-        this.status = Status.SCHEDULED;
+        this.status = (status == null) ? Status.SCHEDULED : status;
     }
 
-    
-    
- // Returns patient ID
     public String getPatientID() {
-		return patientID;
-	}
+        return patientID;
+    }
 
+    public void setPatientID(String patientID) {
+        this.patientID = patientID;
+    }
 
+    public String getStaffID() {
+        return staffID;
+    }
 
- // Updates PatientID 
-	public void setPatientID(String patientID) {
-		this.patientID = patientID;
-	}
+    public void setStaffID(String staffID) {
+        this.staffID = staffID;
+    }
 
+    public LocalDateTime getTime() {
+        return time;
+    }
 
+    public void setTime(LocalDateTime time) {
+        this.time = time;
+    }
 
-	// Returns staff ID
-	public String getStaffID() {
-		return staffID;
-	}
+    public Status getStatus() {
+        return status;
+    }
 
+    public void setStatus(Status status) {
+        this.status = status;
+    }
 
+    public String toFileString() {
+        return patientID + "|" + staffID + "|" + time + "|" + status;
+    }
 
-	// Updates  updated Staff ID
-	public void setStaffID(String staffID) {
-		this.staffID = staffID;
-	}
+    public static Appointment fromFileString(String line) {
+        String[] parts = line.split("\\|", -1);
+        if (parts.length != 4) {
+            return null;
+        }
 
+        return new Appointment(
+            parts[0],
+            parts[1],
+            LocalDateTime.parse(parts[2]),
+            Status.valueOf(parts[3])
+        );
+    }
 
-
-	// Returns appointment time
-	public LocalDateTime getTime() {
-		return time;
-	}
-
-
-
-	// Updates  Appointment Time
-	public void setTime(LocalDateTime time) {
-		this.time = time;
-	}
-
-
-
-	// Returns staff ID
-	public Status getStatus() {
-		return status;
-	}
-
-
-
-    // Updates appointment status
-	public void setStatus(Status status) {
-		this.status = status;
-	}
-
-
-
-    // Updates appointment status
-    public void display(){
+    public void display() {
         System.out.println("Patient ID: " + patientID);
         System.out.println("Staff ID: " + staffID);
         System.out.println("Time: " + time);
         System.out.println("Status: " + status);
     }
- 
 }
