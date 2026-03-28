@@ -1,3 +1,8 @@
+package appointment;
+
+import java.time.LocalDateTime;
+
+public class Appointment {
 
 
     public enum Status { SCHEDULED, COMPLETED, CANCELLED, NO_SHOW }
