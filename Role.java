@@ -104,3 +104,4 @@ public class Role {
     public String toString() {
         return "Role: " + roleName + ", Permissions: " + permissions;
     }
+}
