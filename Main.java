@@ -64,9 +64,9 @@ public class Main {
         while (currentUser == null) {
             System.out.println(CYAN + "\n===== EMHR LOGIN =====" + RESET);
             System.out.print("Enter Username: ");
-            String loginUsername = input.next();
+            String loginUsername = input.nextLine();
             System.out.print("Enter Password: ");
-            String loginPassword = input.next();
+            String loginPassword = input.nextLine();
 
             currentUser = userManager.authenticate(loginUsername, loginPassword);
 
@@ -98,8 +98,7 @@ public class Main {
 
             try {
                 System.out.print("Enter Choice: ");
-                choice = input.nextInt();
-                input.nextLine(); // clear leftover newline
+                choice = Integer.parseInt(input.nextLine());
             } catch (Exception e) {
                 System.out.println("Invalid menu input.");
                 input.nextLine();
@@ -168,13 +167,13 @@ public class Main {
                 	}
                     try {
                         System.out.print("Enter Patient ID to update: ");
-                        String updateId = input.next();
+                        String updateId = input.nextLine();
 
                         System.out.print("Enter New Contact Number: ");
-                        String newContact = input.next();
+                        String newContact = input.nextLine();
 
                         System.out.print("Enter New Next of Kin: ");
-                        String newKin = input.next();
+                        String newKin = input.nextLine();
 
                         boolean patientUpdated = FileManager.updatePatient(updateId, newContact, newKin);
                         if (patientUpdated) {
@@ -197,7 +196,7 @@ public class Main {
                     try {
 
                         System.out.print("Enter Patient ID to delete: ");
-                        String deleteId = input.next();
+                        String deleteId = input.nextLine();
 
                         boolean deleted = FileManager.deletePatient(deleteId);
                         if (deleted) {
@@ -224,18 +223,17 @@ public class Main {
                     }
 
                     try {
-                        input.nextLine();
                         System.out.print("Enter Full Name: ");
                         String fullName = input.nextLine();
 
                         System.out.print("Enter Username: ");
-                        String username = input.next();
+                        String username = input.nextLine();
 
                         System.out.print("Enter Password: ");
-                        String password = input.next();
+                        String password = input.nextLine();
 
                         System.out.print("Enter Role (ADMIN/MANAGER/USER): ");
-                        String roleName = input.next();
+                        String roleName = input.nextLine();
 
                         User newUser = new User(fullName, username, password);
                         newUser.addRole(new Role(roleName));
@@ -264,7 +262,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Username to View: ");
-                    String usernameToView = input.next();
+                    String usernameToView = input.nextLine();
 
                     userManager.viewSingleUser(usernameToView);
                     FileManager.logAudit("Viewed single user: " + usernameToView + " by " + currentUser.getUsername());
@@ -296,14 +294,14 @@ public class Main {
 
                     try {
                         System.out.print("Enter Username to Update: ");
-                        String usernameToUpdate = input.next();
+                        String usernameToUpdate = input.nextLine();
 
                         input.nextLine();
                         System.out.print("Enter New Full Name: ");
                         String newFullName = input.nextLine();
 
                         System.out.print("Enter New Password: ");
-                        String newPassword = input.next();
+                        String newPassword = input.nextLine();
 
                         boolean userUpdated = userManager.updateUser(usernameToUpdate, newFullName, newPassword);
 
@@ -330,7 +328,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Username to Delete: ");
-                    String usernameToDelete = input.next();
+                    String usernameToDelete = input.nextLine();
 
                     boolean userDeleted = userManager.deleteUser(usernameToDelete);
 
@@ -368,10 +366,10 @@ public class Main {
 
                     try {
                         System.out.print("Enter Patient ID: ");
-                        String patientID = input.next();
+                        String patientID = input.nextLine();
 
                         System.out.print("Enter Staff ID: ");
-                        String staffID = input.next();
+                        String staffID = input.nextLine();
 
                         input.nextLine();
                         System.out.print("Enter Appointment Date and Time (yyyy-MM-dd HH:mm): ");
@@ -432,7 +430,7 @@ public class Main {
                         LocalDateTime appointmentTime = LocalDateTime.parse(statusTime, format);
 
                         System.out.print("Enter New Status (SCHEDULED, COMPLETED, CANCELLED, NO_SHOW): ");
-                        String statusInput = input.next().toUpperCase();
+                        String statusInput = input.nextLine().toUpperCase();
 
                         Appointment.Status newStatus = Appointment.Status.valueOf(statusInput);
 
@@ -462,10 +460,10 @@ public class Main {
 
                     try {
                         System.out.print("Enter Billing Amount: ");
-                        double amount = input.nextDouble();
+                        double amount = Double.parseDouble(input.nextLine());
 
                         System.out.print("Choose Payment Method (1-Cash, 2-Card, 3-Insurance): ");
-                        int method = input.nextInt();
+                        int method = Integer.parseInt(input.nextLine());
 
                         Payment payment = null;
 
@@ -510,27 +508,26 @@ public class Main {
 
                     try {
                         System.out.print("Enter Patient ID: ");
-                        String pid = input.next();
+                        String pid = input.nextLine();
 
                         System.out.print("Enter Visit Date (yyyy-MM-dd): ");
-                        String date = input.next();
+                        String date = input.nextLine();
 
-                        input.nextLine();
                         System.out.print("Enter Purpose for Processing: ");
                         String purpose = input.nextLine();
 
                         System.out.print("Enter Temperature: ");
-                        double temperature = input.nextDouble();
+                        double temperature = Double.parseDouble(input.nextLine());
 
                         System.out.print("Enter Heart Rate: ");
-                        int hr = input.nextInt();
+                        int hr = Integer.parseInt(input.nextLine());
 
                         input.nextLine();
                         System.out.print("Enter Blood Pressure (example 120/80): ");
                         String bp = input.nextLine();
 
                         System.out.print("Enter Oxygen Level: ");
-                        int oxygen = input.nextInt();
+                        int oxygen = Integer.parseInt(input.nextLine());
 
                         input.nextLine();
                         System.out.print("Enter Diagnosis: ");
@@ -592,7 +589,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Patient ID: ");
-                    String patientIdSearch = input.next();
+                    String patientIdSearch = input.nextLine();
 
                     List<VisitRecord> patientVisits = FileManager.getVisitRecordsByPatientId(patientIdSearch);
                     FileManager.displayVisitRecordList(patientVisits);
@@ -630,7 +627,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Date (yyyy-MM-dd): ");
-                    String dateSearch = input.next();
+                    String dateSearch = input.nextLine();
 
                     List<VisitRecord> dateResults = FileManager.searchVisitRecordsByDate(dateSearch);
                     FileManager.displayVisitRecordList(dateResults);
@@ -650,10 +647,10 @@ public class Main {
 
                     try {
                         System.out.print("Enter Patient ID: ");
-                        String triagePatientId = input.next();
+                        String triagePatientId = input.nextLine();
 
                         System.out.print("Enter Current Heart Rate: ");
-                        int heartRate = input.nextInt();
+                        int heartRate = Integer.parseInt(input.nextLine());
 
                         ArrayList<Integer> previousRates = new ArrayList<>();
 
