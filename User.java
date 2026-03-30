@@ -86,9 +86,9 @@ public class User {
     }
 
     public void display() {
+    	System.out.println("\n===== Display User Data =====");
         System.out.println("Full Name: " + fullName);
         System.out.println("Username: " + username);
         System.out.println("Roles: " + rolesToString());
     }
-
 }
