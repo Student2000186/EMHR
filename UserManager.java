@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import fileManager.FileManager;
-import user.User;
 import role.Role;
+import user.User;
 
 public class UserManager {
 
@@ -29,7 +29,6 @@ public class UserManager {
             }
         }
 
-        // Create default admin only if no users exist
         if (users.isEmpty()) {
             User defaultAdmin = new User("System Administrator", "admin", "Admin123");
             defaultAdmin.addRole(new Role("ADMIN"));
@@ -69,6 +68,10 @@ public class UserManager {
     }
 
     public boolean addUser(User user) {
+        if (user == null) {
+            return false;
+        }
+
         if (usernameExists(user.getUsername())) {
             System.out.println("Duplicate username not allowed.");
             return false;
@@ -104,6 +107,17 @@ public class UserManager {
     }
 
     public boolean deleteUser(String username) {
+        User userToDelete = findUserByUsername(username);
+
+        if (userToDelete == null) {
+            return false;
+        }
+
+        if (userToDelete.hasPermission("updateSystemConfig") && countAdmins() == 1) {
+            System.out.println("Cannot delete the last admin account.");
+            return false;
+        }
+
         boolean removed = users.removeIf(user -> user.getUsername().equalsIgnoreCase(username));
 
         if (removed) {
@@ -164,8 +178,17 @@ public class UserManager {
             System.out.println("No user is logged in.");
             return;
         }
-
         currentUser.display();
+    }
+
+    private int countAdmins() {
+        int count = 0;
+        for (User user : users) {
+            if (user.hasPermission("updateSystemConfig")) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private void overwriteUsersFile() {
@@ -178,4 +201,3 @@ public class UserManager {
         }
     }
 }
-     
