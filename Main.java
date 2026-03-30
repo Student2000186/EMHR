@@ -1,4 +1,9 @@
 //EMHR Group PROJECT//
+// Rohan Edmond 2000186
+// Ryan Cole	2106111
+// Malachi-Shavario Shouta	2404920
+// Trev-ann Cameron	2405379
+//Gabriel Francis	2205720
 
 package main;
 
@@ -17,7 +22,6 @@ import fileManager.FileManager;
 import insuranceBilling.InsuranceBilling;
 import metrics.Metrics;
 import patient.Patient;
-import payment.Payment;
 import role.Role;
 import triage.Triage;
 import user.User;
@@ -64,9 +68,9 @@ public class Main {
         while (currentUser == null) {
             System.out.println(CYAN + "\n===== EMHR LOGIN =====" + RESET);
             System.out.print("Enter Username: ");
-            String loginUsername = input.nextLine();
+            String loginUsername = input.next();
             System.out.print("Enter Password: ");
-            String loginPassword = input.nextLine();
+            String loginPassword = input.next();
 
             currentUser = userManager.authenticate(loginUsername, loginPassword);
 
@@ -97,8 +101,8 @@ public class Main {
             displayMenu();
 
             try {
-                System.out.print("Enter Choice: ");
-                choice = Integer.parseInt(input.nextLine());
+                choice = readInt(input, "Enter Choice: ");
+               // input.nextLine(); // clear leftover newline
             } catch (Exception e) {
                 System.out.println("Invalid menu input.");
                 input.nextLine();
@@ -167,13 +171,13 @@ public class Main {
                 	}
                     try {
                         System.out.print("Enter Patient ID to update: ");
-                        String updateId = input.nextLine();
+                        String updateId = input.next();
 
                         System.out.print("Enter New Contact Number: ");
-                        String newContact = input.nextLine();
+                        String newContact = input.next();
 
                         System.out.print("Enter New Next of Kin: ");
-                        String newKin = input.nextLine();
+                        String newKin = input.next();
 
                         boolean patientUpdated = FileManager.updatePatient(updateId, newContact, newKin);
                         if (patientUpdated) {
@@ -196,7 +200,7 @@ public class Main {
                     try {
 
                         System.out.print("Enter Patient ID to delete: ");
-                        String deleteId = input.nextLine();
+                        String deleteId = input.next();
 
                         boolean deleted = FileManager.deletePatient(deleteId);
                         if (deleted) {
@@ -223,17 +227,18 @@ public class Main {
                     }
 
                     try {
+                        input.nextLine();
                         System.out.print("Enter Full Name: ");
                         String fullName = input.nextLine();
 
                         System.out.print("Enter Username: ");
-                        String username = input.nextLine();
+                        String username = input.next();
 
                         System.out.print("Enter Password: ");
-                        String password = input.nextLine();
+                        String password = input.next();
 
                         System.out.print("Enter Role (ADMIN/MANAGER/USER): ");
-                        String roleName = input.nextLine();
+                        String roleName = input.next();
 
                         User newUser = new User(fullName, username, password);
                         newUser.addRole(new Role(roleName));
@@ -262,7 +267,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Username to View: ");
-                    String usernameToView = input.nextLine();
+                    String usernameToView = input.next();
 
                     userManager.viewSingleUser(usernameToView);
                     FileManager.logAudit("Viewed single user: " + usernameToView + " by " + currentUser.getUsername());
@@ -294,14 +299,14 @@ public class Main {
 
                     try {
                         System.out.print("Enter Username to Update: ");
-                        String usernameToUpdate = input.nextLine();
+                        String usernameToUpdate = input.next();
 
                         input.nextLine();
                         System.out.print("Enter New Full Name: ");
                         String newFullName = input.nextLine();
 
                         System.out.print("Enter New Password: ");
-                        String newPassword = input.nextLine();
+                        String newPassword = input.next();
 
                         boolean userUpdated = userManager.updateUser(usernameToUpdate, newFullName, newPassword);
 
@@ -328,7 +333,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Username to Delete: ");
-                    String usernameToDelete = input.nextLine();
+                    String usernameToDelete = input.next();
 
                     boolean userDeleted = userManager.deleteUser(usernameToDelete);
 
@@ -365,18 +370,11 @@ public class Main {
                     }
 
                     try {
-                        System.out.print("Enter Patient ID: ");
-                        String patientID = input.nextLine();
-
-                        System.out.print("Enter Staff ID: ");
-                        String staffID = input.nextLine();
-
-                        input.nextLine();
-                        System.out.print("Enter Appointment Date and Time (yyyy-MM-dd HH:mm): ");
-                        String inputTime = input.nextLine();
+                        String patientID = readNonEmptyLine(input, "Enter Patient ID: ");
+                        String staffID = readNonEmptyLine(input, "Enter Staff ID: ");
+                        String inputTime = readNonEmptyLine(input, "Enter Appointment Date and Time (yyyy-MM-dd HH:mm): ");
 
                         LocalDateTime time = LocalDateTime.parse(inputTime, format);
-
                         Appointment appt = new Appointment(patientID, staffID, time, Status.SCHEDULED);
 
                         boolean appointmentAdded = appointmentManager.addAppointment(appt);
@@ -390,12 +388,11 @@ public class Main {
                         } else {
                             Metrics.conflicts++;
                             FileManager.logAudit("Appointment conflict for patient: " + patientID + " by " + currentUser.getUsername());
-                            System.out.println(RED + "Scheduling conflict detected." + RESET);
+                            System.out.println(RED + "Scheduling conflict detected for this staff member within the buffer window." + RESET);
                         }
 
                     } catch (Exception e) {
-                        System.out.println(RED + "Error scheduling appointment." + RESET);
-                        input.nextLine();
+                        System.out.println(RED + "Error scheduling appointment. Use format yyyy-MM-dd HH:mm" + RESET);
                     }
 
                     pause(input);
@@ -423,18 +420,17 @@ public class Main {
                     }
 
                     try {
-                        input.nextLine();
-                        System.out.print("Enter Appointment Time to Update (yyyy-MM-dd HH:mm): ");
-                        String statusTime = input.nextLine();
-
+                        String patientID = readNonEmptyLine(input, "Enter Patient ID: ");
+                        String staffID = readNonEmptyLine(input, "Enter Staff ID: ");
+                        String statusTime = readNonEmptyLine(input, "Enter Appointment Time to Update (yyyy-MM-dd HH:mm): ");
                         LocalDateTime appointmentTime = LocalDateTime.parse(statusTime, format);
 
-                        System.out.print("Enter New Status (SCHEDULED, COMPLETED, CANCELLED, NO_SHOW): ");
-                        String statusInput = input.nextLine().toUpperCase();
+                        String statusInput = readNonEmptyLine(input,
+                                "Enter New Status (SCHEDULED, COMPLETED, CANCELLED, NO_SHOW): ").toUpperCase();
 
                         Appointment.Status newStatus = Appointment.Status.valueOf(statusInput);
 
-                        boolean statusUpdated = appointmentManager.updateStatus(appointmentTime, newStatus);
+                        boolean statusUpdated = appointmentManager.updateStatus(patientID, staffID, appointmentTime, newStatus);
 
                         if (statusUpdated) {
                             FileManager.overwriteAppointments(appointmentManager.getAppointments());
@@ -445,13 +441,11 @@ public class Main {
                         }
                     } catch (Exception e) {
                         System.out.println(RED + "Error updating appointment status." + RESET);
-                        input.nextLine();
                     }
 
                     pause(input);
                     break;
                 }
-
                 case 14: {
                     if (!requirePermission(currentUser, "processPayment")) {
                         pause(input);
@@ -459,43 +453,48 @@ public class Main {
                     }
 
                     try {
-                        System.out.print("Enter Billing Amount: ");
-                        double amount = Double.parseDouble(input.nextLine());
-
-                        System.out.print("Choose Payment Method (1-Cash, 2-Card, 3-Insurance): ");
-                        int method = Integer.parseInt(input.nextLine());
-
-                        Payment payment = null;
+                        double amount = readDouble(input, "Enter Billing Amount: ");
+                        int method = readInt(input, "Choose Payment Method (1-Cash, 2-Card, 3-Insurance, 4-Insurance + Cash, 5-Insurance + Card): ");
 
                         switch (method) {
                             case 1:
-                                payment = new CashPayment();
+                                new CashPayment().processPayment(amount);
                                 break;
                             case 2:
-                                payment = new CardPayment();
+                                new CardPayment().processPayment(amount);
                                 break;
                             case 3:
-                                payment = new InsuranceBilling();
+                                new InsuranceBilling().processPayment(amount);
                                 break;
+                            case 4: {
+                                InsuranceBilling insurance = new InsuranceBilling();
+                                insurance.processPayment(amount);
+                                double remainder = amount * 0.20;
+                                System.out.println("Remaining balance handled by cash: $" + remainder);
+                                new CashPayment().processPayment(remainder);
+                                break;
+                            }
+                            case 5: {
+                                InsuranceBilling insurance = new InsuranceBilling();
+                                insurance.processPayment(amount);
+                                double remainder = amount * 0.20;
+                                System.out.println("Remaining balance handled by card: $" + remainder);
+                                new CardPayment().processPayment(remainder);
+                                break;
+                            }
                             default:
                                 System.out.println(RED + "Invalid payment option." + RESET);
-                                input.nextLine();
                                 pause(input);
                                 break;
                         }
 
-                        if (payment != null) {
-                            payment.processPayment(amount);
-                            FileManager.logAudit("Processed payment by " + currentUser.getUsername());
-                            System.out.println(GREEN + "Payment processed successfully." + RESET);
-                        }
+                        FileManager.logAudit("Processed payment by " + currentUser.getUsername());
+                        System.out.println(GREEN + "Payment processed successfully." + RESET);
 
                     } catch (Exception e) {
                         System.out.println(RED + "Error processing payment." + RESET);
-                        input.nextLine();
                     }
 
-                    input.nextLine();
                     pause(input);
                     break;
                 }
@@ -508,26 +507,27 @@ public class Main {
 
                     try {
                         System.out.print("Enter Patient ID: ");
-                        String pid = input.nextLine();
+                        String pid = input.next();
 
                         System.out.print("Enter Visit Date (yyyy-MM-dd): ");
-                        String date = input.nextLine();
+                        String date = input.next();
 
+                        input.nextLine();
                         System.out.print("Enter Purpose for Processing: ");
                         String purpose = input.nextLine();
 
                         System.out.print("Enter Temperature: ");
-                        double temperature = Double.parseDouble(input.nextLine());
+                        double temperature = input.nextDouble();
 
                         System.out.print("Enter Heart Rate: ");
-                        int hr = Integer.parseInt(input.nextLine());
+                        int hr = input.nextInt();
 
                         input.nextLine();
                         System.out.print("Enter Blood Pressure (example 120/80): ");
                         String bp = input.nextLine();
 
                         System.out.print("Enter Oxygen Level: ");
-                        int oxygen = Integer.parseInt(input.nextLine());
+                        int oxygen = input.nextInt();
 
                         input.nextLine();
                         System.out.print("Enter Diagnosis: ");
@@ -589,7 +589,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Patient ID: ");
-                    String patientIdSearch = input.nextLine();
+                    String patientIdSearch = input.next();
 
                     List<VisitRecord> patientVisits = FileManager.getVisitRecordsByPatientId(patientIdSearch);
                     FileManager.displayVisitRecordList(patientVisits);
@@ -627,7 +627,7 @@ public class Main {
                     }
 
                     System.out.print("Enter Date (yyyy-MM-dd): ");
-                    String dateSearch = input.nextLine();
+                    String dateSearch = input.next();
 
                     List<VisitRecord> dateResults = FileManager.searchVisitRecordsByDate(dateSearch);
                     FileManager.displayVisitRecordList(dateResults);
@@ -646,27 +646,24 @@ public class Main {
                     }
 
                     try {
-                        System.out.print("Enter Patient ID: ");
-                        String triagePatientId = input.nextLine();
-
-                        System.out.print("Enter Current Heart Rate: ");
-                        int heartRate = Integer.parseInt(input.nextLine());
+                        String triagePatientId = readNonEmptyLine(input, "Enter Patient ID: ");
+                        int heartRate = readInt(input, "Enter Current Heart Rate: ");
+                        int lastN = readInt(input, "Enter number of previous visits to include in moving average: ");
 
                         ArrayList<Integer> previousRates = new ArrayList<>();
-
                         for (VisitRecord record : FileManager.getVisitRecordsByPatientId(triagePatientId)) {
                             previousRates.add(record.getVitals().getHeartRate());
                         }
 
                         String risk = Triage.riskScore(heartRate);
-                        double average = previousRates.isEmpty() ? heartRate : Triage.movingAverage(previousRates);
+                        double average = previousRates.isEmpty() ? heartRate : Triage.movingAverage(previousRates, lastN);
                         boolean deviation = Triage.hasLargeDeviation(heartRate, average);
 
                         System.out.println(BLUE + "\n--- TRIAGE RESULT ---" + RESET);
                         System.out.println("Patient ID: " + triagePatientId);
                         System.out.println("Current Heart Rate: " + heartRate);
                         System.out.println("Risk Level: " + risk);
-                        System.out.println("Average of Previous Readings: " + average);
+                        System.out.println("Moving Average of Previous Readings: " + average);
 
                         if (deviation) {
                             System.out.println(RED + "Alert: Large deviation detected." + RESET);
@@ -683,7 +680,6 @@ public class Main {
 
                     } catch (Exception e) {
                         System.out.println(RED + "Invalid triage input." + RESET);
-                        input.nextLine();
                     }
 
                     pause(input);
@@ -799,4 +795,41 @@ public class Main {
         }
         return true;
     }
+    public static int readInt(Scanner input, String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                int value = Integer.parseInt(input.nextLine().trim());
+                return value;
+            } catch (NumberFormatException e) {
+                System.out.println(RED + "Invalid whole number. Please try again." + RESET);
+            }
+        }
+    }
+    
+    public static double readDouble(Scanner input, String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                double value = Double.parseDouble(input.nextLine().trim());
+                return value;
+            } catch (NumberFormatException e) {
+                System.out.println(RED + "Invalid number. Please try again." + RESET);
+            }
+        }
+    }
+    
+    
+    public static String readNonEmptyLine(Scanner input, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String value = input.nextLine().trim();
+            if (!value.isEmpty()) {
+                return value;
+            }
+            System.out.println(RED + "This field cannot be blank." + RESET);
+        }
+    
+    
+   }
 }
