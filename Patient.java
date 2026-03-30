@@ -1,3 +1,9 @@
+//EMHR Group PROJECT//
+// Rohan Edmond 2000186
+// Ryan Cole	2106111
+// Malachi-Shavario Shouta	2404920
+// Trev-ann Cameron	2405379
+//Gabriel Francis	2205720
 package patient;
 
 import person.Person;
