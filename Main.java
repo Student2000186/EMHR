@@ -31,7 +31,6 @@ import notificationService.NotificationService;
 import emailObserver.EmailObserver;
 import smsObserver.SmsObserver;
 
-
 // Import classes used to handle date and time
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -430,7 +429,7 @@ public class Main {
 
                         Appointment.Status newStatus = Appointment.Status.valueOf(statusInput);
 
-                        boolean statusUpdated = appointmentManager.updateStatus(patientID, staffID, appointmentTime, newStatus);
+                        boolean statusUpdated = appointmentManager.updateStatus(appointmentTime, newStatus);
 
                         if (statusUpdated) {
                             FileManager.overwriteAppointments(appointmentManager.getAppointments());
