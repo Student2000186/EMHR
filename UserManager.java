@@ -18,6 +18,10 @@ public class UserManager {
         loadUsersFromFile();
     }
 
+    public ArrayList<User> getUsers() {
+        return users;
+    }
+
     public void loadUsersFromFile() {
         users.clear();
         List<String> lines = FileManager.loadRawUsers();
