@@ -38,6 +38,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import javax.swing.text.MaskFormatter;
 import java.text.ParseException;
+import java.util.Date;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -215,8 +216,9 @@ public class Main {
         buttonDoes(btnProcessPayment,Main::processPayment);
         buttonDoes(btnRecordVisit,Main::recordEHR);
         buttonDoes(btnViewAllEHR,Main::viewEHR);
-
-        buttonDoes(btnSearchEHRByDiagnosis,Main::searchEHR);
+        buttonDoes(btnSearchEHRByDate,Main::searchEHRByDateRange);
+        buttonDoes(btnSearchEHRByDiagnosis,Main::searchEHRByDiagnosis);
+        buttonDoes(btnSearchEHRByPatientId,Main::searchEHRByPatientId);
         buttonDoes(btnTriageAnalytics,Main::runTriage);
         buttonDoes(btnWeeklyReport,Main::weeklyReport);
 
@@ -1097,7 +1099,49 @@ public class Main {
                 JOptionPane.showMessageDialog(frame, new JScrollPane(recordArea), "EHR for Patient ID: " + pid, JOptionPane.INFORMATION_MESSAGE);
             });
         }
-        public static void searchEHR() {
+
+        public static void searchEHRByPatientId() {
+            if(!userAllowed("searchEHR")){
+                return;
+            }
+            JTextField pidField = new JTextField(20);
+            JLabel pidLabel = new JLabel("Search by Patient ID:");
+            JButton submitButton = new JButton("Search");
+            clearPanel();
+            place(pidLabel, 0, 0, 1, 1);
+            place(pidField, 1, 0, 2, 1);
+            place(submitButton, 1, 1, 1, 1);
+            repaintPanel();
+
+            submitButton.addActionListener(e -> {
+                String pid = pidField.getText().trim();
+                if (pid.isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "Please enter a patient ID to search for.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                List<VisitRecord> records = FileManager.getVisitRecordsByPatientId(pid);
+                if (records.isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "No records found for patient ID: " + pid, "No Records", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                StringBuilder sb = new StringBuilder();
+                for (VisitRecord record : records) {
+                    sb.append("Date: ").append(record.getDate()).append("\n")
+                      .append("Purpose: ").append(record.getPurposeForProcessing()).append("\n")
+                      .append("Vitals: ").append(record.getVitals().toString()).append("\n")
+                      .append("Diagnosis: ").append(record.getDiagnosis()).append("\n")
+                      .append("Prescription: ").append(record.getPrescription()).append("\n")
+                      .append("Allergies: ").append(record.getAllergies()).append("\n")
+                      .append("Lab Results: ").append(record.getLabResults()).append("\n")
+                      .append("Immunization Date: ").append(record.getImmunizationDate()).append("\n")
+                      .append("-----------------------------\n");
+                }
+                JTextArea recordArea = new JTextArea(sb.toString());
+                recordArea.setEditable(false);
+                JOptionPane.showMessageDialog(frame, new JScrollPane(recordArea), "Search Results for Patient ID: " + pid, JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
+        public static void searchEHRByDiagnosis() {
             if(!userAllowed("searchEHR")){
                 return;
             }
@@ -1136,6 +1180,64 @@ public class Main {
                 JTextArea recordArea = new JTextArea(sb.toString());
                 recordArea.setEditable(false);
                 JOptionPane.showMessageDialog(frame, new JScrollPane(recordArea), "Search Results for Diagnosis: " + diagnosis, JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
+        public static void searchEHRByDateRange() {
+            if(!userAllowed("searchEHR")){
+                return;
+            }
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            JFormattedTextField startDateField = new JFormattedTextField(dateFormat);
+            startDateField.setColumns(20);
+            JFormattedTextField endDateField = new JFormattedTextField(dateFormat);
+            endDateField.setColumns(20);
+            JLabel startLabel = new JLabel("Start Date (yyyy-MM-dd):");
+            JLabel endLabel = new JLabel("End Date (yyyy-MM-dd):");
+            JButton submitButton = new JButton("Search");
+            clearPanel();
+            place(startLabel, 0, 0, 1, 1);
+            place(startDateField, 1, 0, 2, 1);
+            place(endLabel, 0, 1, 1, 1);
+            place(endDateField, 1, 1, 2, 1);
+            place(submitButton, 1, 2, 1, 1);
+            repaintPanel();
+
+            submitButton.addActionListener(e -> {
+                try {
+                    String startStr = startDateField.getText().trim();
+                    String endStr = endDateField.getText().trim();
+                    if (startStr.isEmpty() || endStr.isEmpty()) {
+                        JOptionPane.showMessageDialog(frame, "Please enter both start and end dates.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    Date startDate = dateFormat.parse(startStr);
+                    Date endDate = dateFormat.parse(endStr);
+                    List<VisitRecord> records = FileManager.searchVisitRecordsByDateRange(startDate.toString(), endDate.toString());
+                    if (records.isEmpty()) {
+                        JOptionPane.showMessageDialog(frame, "No records found in the specified date range.", "No Records", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    for (VisitRecord record : records) {
+                        sb.append("Patient ID: ").append(record.getPatientID()).append("\n")
+                          .append("Date: ").append(record.getDate()).append("\n")
+                          .append("Purpose: ").append(record.getPurposeForProcessing()).append("\n")
+                          .append("Vitals: ").append(record.getVitals().toString()).append("\n")
+                          .append("Diagnosis: ").append(record.getDiagnosis()).append("\n")
+                          .append("Prescription: ").append(record.getPrescription()).append("\n")
+                          .append("Allergies: ").append(record.getAllergies()).append("\n")
+                          .append("Lab Results: ").append(record.getLabResults()).append("\n")
+                          .append("Immunization Date: ").append(record.getImmunizationDate()).append("\n")
+                          .append("-----------------------------\n");
+                    }
+                    JTextArea recordArea = new JTextArea(sb.toString());
+                    recordArea.setEditable(false);
+                    JOptionPane.showMessageDialog(frame, new JScrollPane(recordArea), "Search Results for Date Range: " + startStr + " to " + endStr, JOptionPane.INFORMATION_MESSAGE);
+                } catch (ParseException ex) {
+                    JOptionPane.showMessageDialog(frame, "Invalid date format. Please enter dates in yyyy-MM-dd format.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, "Error searching records: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             });
         }
         public static void runTriage() {

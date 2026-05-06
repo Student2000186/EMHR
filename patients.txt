@@ -1,0 +1,10 @@
+E101|John Miller|777-871-3124|Paula Miller
+E102|Sarah Jenkins|555-123-4567|Robert Jenkins
+E103|Michael Chen|415-882-0912|Linda Chen
+E104|Elena Rodriguez|305-771-8843|Carlos Rodriguez
+E105|David Thompson|612-555-0198|Susan Thompson
+E106|Aisha Khan|212-443-7721|Omar Khan
+E107|Kevin O'Brien|312-889-4456|Mary O'Brien
+E108|Chloe Tanaka|206-555-9012|Kenji Tanaka
+E109|Marcus Wright|404-332-1187|Angela Wright
+E110|Sophia Muller|202-776-5541|Hans Muller

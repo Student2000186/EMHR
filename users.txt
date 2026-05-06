@@ -1,0 +1,12 @@
+admin|System Administrator|Admin123|ADMIN
+alice|Alice Vance|Secur3Pass|USER
+bob|Bob Gregson|BlueSky88*|USER
+clara|Clara Loft|Mountain2024#|MANAGER
+derek|Derek Zhao|P@ssw0rd99|USER
+elena|Elena Rossi|Cia0_Mondo!|ADMIN
+fiona|Fiona Gallagher|SouthSide7|USER
+george|George Harris|CoffeeBreak!|USER
+hannah|Hannah Abbott|Hufflepuff4|MANAGER
+ian|Ian Wright|Arsenal123!|USER
+jasmine|Jasmine Lee|Sparkle99$|USER
+ryan|Ryan Cole|ryan1234|Manager

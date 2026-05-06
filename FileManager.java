@@ -290,6 +290,17 @@ public class FileManager {
 
         return results;
     }
+    public static List<VisitRecord> searchVisitRecordsByDateRange(String startDate, String endDate) {
+        List<VisitRecord> results = new ArrayList<>();
+
+        for (VisitRecord visit : loadVisitRecords()) {
+            if (visit.getDate().compareTo(startDate) >= 0 && visit.getDate().compareTo(endDate) <= 0) {
+                results.add(visit);
+            }
+        }
+
+        return results;
+    }
     public static void displayVisitRecordList(List<VisitRecord> visits) {
         if (visits.isEmpty()) {
             System.out.println("No matching visit records found.");
